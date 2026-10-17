@@ -41,6 +41,7 @@ fun SearchScreen(repository: TaskRepository, onOpenTask: (Long) -> Unit, onBack:
         if (query.isBlank()) flowOf(emptyList<TaskWithDetails>()) else repository.search(query)
     }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
+    val listsById = rememberListsById(repository)
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -70,6 +71,7 @@ fun SearchScreen(repository: TaskRepository, onOpenTask: (Long) -> Unit, onBack:
                 items(results, key = { it.task.id }) { item ->
                     TaskRow(
                         item = item,
+                        list = listsById[item.task.listId],
                         onToggle = { scope.launch { repository.toggleCompleted(item.task) } },
                         onClick = { onOpenTask(item.task.id) },
                     )

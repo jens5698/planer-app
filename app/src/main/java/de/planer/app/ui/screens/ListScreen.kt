@@ -28,7 +28,11 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
     val list = lists.firstOrNull { it.id == listId }
     TaskListContent(
         repository = repository,
-        tasks = tasks,
+        sections = listOf(
+            AgendaSection("open", "Offen", tasks.filter { !it.task.isCompleted }),
+            AgendaSection("done", "Erledigt", tasks.filter { it.task.isCompleted }),
+        ),
+        initiallyCollapsed = setOf("done"),
         targetListId = { listId },
         defaultDue = null,
         onOpenTask = onOpenTask,
@@ -39,7 +43,7 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = androidx.compose.ui.graphics.Color(list.color))
                             Spacer(Modifier.width(12.dp))
-                            Text(list.name)
+                            Text(list.name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                         }
                     }
                 },

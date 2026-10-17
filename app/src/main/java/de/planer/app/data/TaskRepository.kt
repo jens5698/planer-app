@@ -27,6 +27,10 @@ class TaskRepository(
         return tasks.observeDueBefore(tomorrow)
     }
 
+    /** Offene Aufgaben mit Fälligkeit vor [endExclusive], inklusive überfälliger. */
+    fun observeOpenUntil(endExclusive: LocalDate, zone: ZoneId = ZoneId.systemDefault()) =
+        tasks.observeDueBefore(endExclusive.atStartOfDay(zone).toInstant().toEpochMilli())
+
     fun observeDay(day: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Flow<List<TaskWithDetails>> {
         val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
         val end = day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()

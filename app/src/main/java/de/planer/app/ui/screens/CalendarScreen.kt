@@ -84,11 +84,10 @@ fun CalendarScreen(repository: TaskRepository, calendar: CalendarRepository, onO
 
     TaskListContent(
         repository = repository,
-        tasks = dayTasks,
+        sections = listOf(AgendaSection("day", de.planer.app.ui.components.dayTitle(selected), dayTasks, dayEvents)),
         targetListId = { repository.observeLists().first().first().id },
         defaultDue = selected,
         onOpenTask = onOpenTask,
-        events = dayEvents,
         topBar = {
             Column {
                 TopAppBar(

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,12 +28,13 @@ import de.planer.app.ui.screens.ListScreen
 import de.planer.app.ui.screens.ListsScreen
 import de.planer.app.ui.screens.SearchScreen
 import de.planer.app.ui.screens.TaskDetailScreen
-import de.planer.app.ui.screens.TodayScreen
+import de.planer.app.ui.screens.AgendaScreen
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab("today", "Heute", Icons.Filled.Today),
+    Tab("week", "7 Tage", Icons.Filled.DateRange),
     Tab("lists", "Listen", Icons.AutoMirrored.Filled.List),
     Tab("calendar", "Kalender", Icons.Filled.CalendarMonth),
 )
@@ -46,7 +48,7 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
     Scaffold(
         bottomBar = {
             if (tabs.any { it.route == current }) {
-                NavigationBar {
+                NavigationBar(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = current == tab.route,
@@ -59,6 +61,7 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
                             },
                             icon = { Icon(tab.icon, contentDescription = null) },
                             label = { Text(tab.label) },
+                            alwaysShowLabel = false,
                         )
                     }
                 }
@@ -68,7 +71,12 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
         val openTask = { id: Long -> nav.navigate("task/$id") }
         val openSearch = { nav.navigate("search") }
         NavHost(nav, startDestination = "today", modifier = Modifier.padding(padding)) {
-            composable("today") { TodayScreen(repository, calendar, openTask, openSearch) }
+            composable("today") {
+                AgendaScreen(repository, calendar, days = 1, title = "Heute", empty = "Nichts mehr für heute.", onOpenTask = openTask, onSearch = openSearch)
+            }
+            composable("week") {
+                AgendaScreen(repository, calendar, days = 7, title = "Nächste 7 Tage", empty = "Keine Aufgaben in den nächsten 7 Tagen.", onOpenTask = openTask, onSearch = openSearch)
+            }
             composable("lists") { ListsScreen(repository, onOpenList = { nav.navigate("list/$it") }, onSearch = openSearch) }
             composable("calendar") { CalendarScreen(repository, calendar, openTask) }
             composable("search") { SearchScreen(repository, openTask, onBack = { nav.popBackStack() }) }

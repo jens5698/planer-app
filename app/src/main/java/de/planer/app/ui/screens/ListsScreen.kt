@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,10 +14,10 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -40,6 +39,7 @@ import de.planer.app.data.TaskRepository
 import de.planer.app.ui.ListIcon
 import de.planer.app.ui.components.ColorPicker
 import de.planer.app.ui.components.IconPicker
+import de.planer.app.ui.components.SectionCard
 import kotlinx.coroutines.launch
 
 /** Zustand des Listen-Dialogs; [list] ist null beim Anlegen. */
@@ -56,36 +56,50 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Listen") },
+                title = { Text("Listen", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
                     IconButton(onClick = onSearch) { Icon(Icons.Filled.Search, contentDescription = "Suchen") }
                 },
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { draft = ListDraft(null, "", ListIcon.LIST, ListIcon.LIST.color) }) {
+            FloatingActionButton(
+                onClick = { draft = ListDraft(null, "", ListIcon.LIST, ListIcon.LIST.color) },
+                shape = androidx.compose.foundation.shape.CircleShape,
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Liste anlegen")
             }
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            items(lists, key = { it.id }) { list ->
-                ListItem(
-                    leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = Color(list.color)) },
-                    headlineContent = { Text(list.name) },
-                    trailingContent = {
-                        IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon), list.color) }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Liste bearbeiten")
-                        }
-                    },
-                    modifier = Modifier.clickable { onOpenList(list.id) },
-                )
+            item {
+                SectionCard("Listen", lists.size, collapsed = false, onToggle = {}) {
+                    lists.forEach { list ->
+                        ListItem(
+                            leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = Color(list.color)) },
+                            headlineContent = { Text(list.name) },
+                            trailingContent = {
+                                IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon), list.color) }) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Liste bearbeiten", tint = MaterialTheme.colorScheme.outline)
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.clickable { onOpenList(list.id) },
+                        )
+                    }
+                }
             }
             if (tags.isNotEmpty()) {
-                item { HorizontalDivider() }
-                item { ListItem(headlineContent = { Text("Tags") }) }
-                items(tags, key = { "tag-${it.id}" }) { tag ->
-                    ListItem(headlineContent = { Text("#${tag.name}") })
+                item {
+                    SectionCard("Tags", tags.size, collapsed = false, onToggle = {}) {
+                        tags.forEach { tag ->
+                            ListItem(
+                                headlineContent = { Text("#${tag.name}") },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            )
+                        }
+                    }
                 }
             }
         }

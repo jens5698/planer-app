@@ -61,3 +61,31 @@ class ListIconTest {
         assertEquals(de.planer.app.ui.ListIcon.LIST, de.planer.app.ui.ListIcon.of("GIBTS_NICHT"))
     }
 }
+
+class AgendaTest {
+    private fun task(id: Long, due: LocalDate) = de.planer.app.data.TaskWithDetails(
+        de.planer.app.data.Task(
+            id = id, listId = 1, title = "T$id",
+            dueAt = due.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+        ),
+        emptyList(), emptyList(),
+    )
+
+    @Test fun groupsOverdueAndDaysAndShowsMultiDayEventOnce() {
+        val today = LocalDate.of(2026, 10, 17)
+        val tasks = listOf(task(1, today.minusDays(2)), task(2, today), task(3, today.plusDays(2)))
+        val ferien = CalendarEvent(
+            9, "Herbstferien",
+            today.plusDays(2).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+            today.plusDays(13).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+            allDay = true, color = 0, calendarName = "",
+        )
+        val sections = de.planer.app.ui.screens.buildAgenda(today, 7, tasks, listOf(ferien))
+        assertEquals("Überfällig", sections.first().title)
+        assertEquals("Sa., Heute", sections[1].title)
+        assertEquals(listOf(2L), sections[1].tasks.map { it.task.id })
+        assertEquals("Mo., 19. Okt.", sections[3].title)
+        assertEquals(1, sections.sumOf { it.events.size })
+        assertEquals(1, sections[3].events.size)
+    }
+}

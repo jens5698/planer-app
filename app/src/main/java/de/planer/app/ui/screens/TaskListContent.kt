@@ -1,66 +1,113 @@
 package de.planer.app.ui.screens
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.planer.app.calendar.CalendarEvent
 import de.planer.app.data.Task
+import de.planer.app.data.TaskList
 import de.planer.app.data.TaskRepository
 import de.planer.app.data.TaskWithDetails
 import de.planer.app.ui.components.EventRow
 import de.planer.app.ui.components.QuickAddDialog
+import de.planer.app.ui.components.SectionCard
 import de.planer.app.ui.components.TaskRow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-/** Gemeinsame Aufgabenliste mit "+"-Button für Heute-, Listen- und Kalenderansicht. */
+/** Eine Karte in der Übersicht, z. B. ein Tag oder "Überfällig". */
+data class AgendaSection(
+    val key: String,
+    val title: String,
+    val tasks: List<TaskWithDetails>,
+    val events: List<CalendarEvent> = emptyList(),
+    val warn: Boolean = false,
+) {
+    val count get() = tasks.size + events.size
+}
+
+@Composable
+fun rememberListsById(repository: TaskRepository): Map<Long, TaskList> {
+    val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
+    return remember(lists) { lists.associateBy { it.id } }
+}
+
+/** Gemeinsame Kartenansicht mit "+"-Button für Übersicht, Listen und Kalender. Leere Karten werden ausgeblendet. */
 @Composable
 fun TaskListContent(
     repository: TaskRepository,
-    tasks: List<TaskWithDetails>,
+    sections: List<AgendaSection>,
     targetListId: suspend () -> Long,
     defaultDue: LocalDate?,
     onOpenTask: (Long) -> Unit,
     topBar: @Composable () -> Unit,
     empty: String,
-    events: List<CalendarEvent> = emptyList(),
+    initiallyCollapsed: Set<String> = emptySet(),
 ) {
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
+    var collapsed by rememberSaveable { mutableStateOf(initiallyCollapsed.toList()) }
+    val listsById = rememberListsById(repository)
+    val visible = sections.filter { it.count > 0 }
 
     Scaffold(
         topBar = topBar,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(onClick = { adding = true }) { Icon(Icons.Filled.Add, contentDescription = "Aufgabe hinzufügen") }
+            FloatingActionButton(
+                onClick = { adding = true },
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primary,
+            ) { Icon(Icons.Filled.Add, contentDescription = "Aufgabe hinzufügen") }
         },
     ) { padding ->
-        if (tasks.isEmpty() && events.isEmpty()) {
-            Text(empty, Modifier.padding(padding).padding(24.dp))
+        if (visible.isEmpty()) {
+            Text(empty, Modifier.padding(padding).padding(24.dp), color = MaterialTheme.colorScheme.outline)
         }
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            items(events, key = { "event-${it.eventId}-${it.begin}" }) { EventRow(it) }
-            items(tasks, key = { it.task.id }) { item ->
-                TaskRow(
-                    item = item,
-                    onToggle = { scope.launch { repository.toggleCompleted(item.task) } },
-                    onClick = { onOpenTask(item.task.id) },
-                )
+            items(visible, key = { it.key }) { section ->
+                val isCollapsed = section.key in collapsed
+                SectionCard(
+                    title = section.title,
+                    count = section.count,
+                    collapsed = isCollapsed,
+                    onToggle = { collapsed = if (isCollapsed) collapsed - section.key else collapsed + section.key },
+                    titleColor = if (section.warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                ) {
+                    section.tasks.forEach { item ->
+                        TaskRow(
+                            item = item,
+                            list = listsById[item.task.listId],
+                            onToggle = { scope.launch { repository.toggleCompleted(item.task) } },
+                            onClick = { onOpenTask(item.task.id) },
+                        )
+                    }
+                    section.events.forEach { EventRow(it) }
+                }
             }
+            // Platz, damit der "+"-Button die letzte Zeile nicht verdeckt.
+            item { Spacer(Modifier.height(88.dp)) }
         }
     }
 
