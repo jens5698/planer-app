@@ -18,9 +18,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.planer.app.calendar.CalendarEvent
 import de.planer.app.data.Task
 import de.planer.app.data.TaskRepository
 import de.planer.app.data.TaskWithDetails
+import de.planer.app.ui.components.EventRow
 import de.planer.app.ui.components.QuickAddDialog
 import de.planer.app.ui.components.TaskRow
 import kotlinx.coroutines.launch
@@ -36,6 +38,7 @@ fun TaskListContent(
     onOpenTask: (Long) -> Unit,
     topBar: @Composable () -> Unit,
     empty: String,
+    events: List<CalendarEvent> = emptyList(),
 ) {
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
@@ -46,10 +49,11 @@ fun TaskListContent(
             FloatingActionButton(onClick = { adding = true }) { Icon(Icons.Filled.Add, contentDescription = "Aufgabe hinzufügen") }
         },
     ) { padding ->
-        if (tasks.isEmpty()) {
+        if (tasks.isEmpty() && events.isEmpty()) {
             Text(empty, Modifier.padding(padding).padding(24.dp))
         }
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+            items(events, key = { "event-${it.eventId}-${it.begin}" }) { EventRow(it) }
             items(tasks, key = { it.task.id }) { item ->
                 TaskRow(
                     item = item,

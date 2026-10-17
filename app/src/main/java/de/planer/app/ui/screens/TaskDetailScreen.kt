@@ -42,6 +42,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.Priority
+import de.planer.app.data.Repeat
+import de.planer.app.data.label
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import de.planer.app.data.TaskRepository
 import de.planer.app.ui.components.formatDue
 import de.planer.app.ui.components.priorityColor
@@ -52,7 +56,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Unit) {
     val details by remember(taskId) { repository.observeTask(taskId) }.collectAsState(initial = null)
@@ -134,6 +138,22 @@ fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Uni
                                 color = priorityColor(p),
                             )
                         },
+                    )
+                }
+            }
+
+            Text("Wiederholen", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Repeat.entries.forEach { r ->
+                    FilterChip(
+                        selected = task.repeat == r,
+                        onClick = {
+                            // Wiederholung braucht ein Startdatum; ohne Datum wird heute gesetzt.
+                            val due = task.dueAt ?: if (r == Repeat.NONE) null else
+                                java.time.LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            scope.launch { repository.updateTask(task.copy(repeat = r, dueAt = due)) }
+                        },
+                        label = { Text(r.label) },
                     )
                 }
             }

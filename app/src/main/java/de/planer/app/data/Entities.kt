@@ -12,9 +12,13 @@ data class TaskList(
     val name: String,
     val color: Long = 0xFF4772FA,
     val sortOrder: Int = 0,
+    /** Name eines Eintrags aus [de.planer.app.ui.ListIcon]. */
+    val icon: String = "LIST",
 )
 
 enum class Priority { NONE, LOW, MEDIUM, HIGH }
+
+enum class Repeat { NONE, DAILY, WEEKDAYS, WEEKLY, MONTHLY, YEARLY }
 
 @Entity(
     tableName = "tasks",
@@ -40,6 +44,7 @@ data class Task(
     /** Erinnerung als Epoch-Millis; null = keine Erinnerung. */
     val remindAt: Long? = null,
     val completedAt: Long? = null,
+    val repeat: Repeat = Repeat.NONE,
     val createdAt: Long = System.currentTimeMillis(),
     val sortOrder: Int = 0,
 ) {

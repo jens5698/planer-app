@@ -2,6 +2,7 @@ package de.planer.app.data
 
 import de.planer.app.reminder.ReminderScheduler
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -32,11 +33,24 @@ class TaskRepository(
         return tasks.observeBetween(start, end)
     }
 
+    /** Alle Aufgaben mit Fälligkeit im Bereich [start, endExclusive). */
+    fun observeRange(start: LocalDate, endExclusive: LocalDate, zone: ZoneId = ZoneId.systemDefault()) =
+        tasks.observeBetween(
+            start.atStartOfDay(zone).toInstant().toEpochMilli(),
+            endExclusive.atStartOfDay(zone).toInstant().toEpochMilli(),
+        )
+
+    fun search(query: String): Flow<List<TaskWithDetails>> = tasks.search(query.trim())
+
     suspend fun ensureDefaultList() {
-        if (lists.count() == 0) lists.insert(TaskList(name = "Eingang"))
+        if (lists.count() == 0) lists.insert(TaskList(name = "Eingang", icon = "INBOX"))
     }
 
-    suspend fun addList(name: String) = lists.insert(TaskList(name = name))
+    suspend fun addList(name: String, icon: String) = lists.insert(TaskList(name = name, icon = icon))
+
+    suspend fun updateList(list: TaskList) = lists.update(list)
+
+    suspend fun deleteList(list: TaskList) = lists.delete(list)
 
     suspend fun addTask(task: Task): Long {
         val id = tasks.insert(task)
@@ -49,7 +63,20 @@ class TaskRepository(
         reminders.schedule(task)
     }
 
-    suspend fun toggleCompleted(task: Task) {
+    /**
+     * Abhaken. Wiederkehrende Aufgaben springen wie in TickTick auf den nächsten Termin,
+     * statt erledigt zu werden; die Checkliste wird dabei zurückgesetzt.
+     */
+    suspend fun toggleCompleted(task: Task, zone: ZoneId = ZoneId.systemDefault()) {
+        val due = task.dueAt
+        if (!task.isCompleted && task.repeat != Repeat.NONE && due != null) {
+            val current = Instant.ofEpochMilli(due).atZone(zone)
+            val next = current.with(task.repeat.next(current.toLocalDate()))
+            val delta = next.toInstant().toEpochMilli() - due
+            updateTask(task.copy(dueAt = due + delta, remindAt = task.remindAt?.plus(delta)))
+            checklist.resetAll(task.id)
+            return
+        }
         updateTask(task.copy(completedAt = if (task.isCompleted) null else System.currentTimeMillis()))
     }
 

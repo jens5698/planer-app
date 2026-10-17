@@ -16,7 +16,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v5
-      - run: ./gradlew assembleDebug
+      - run: ./gradlew testDebugUnitTest assembleDebug
       - run: cp app/build/outputs/apk/debug/app-debug.apk planer.apk
       - uses: actions/upload-artifact@v5
         with:

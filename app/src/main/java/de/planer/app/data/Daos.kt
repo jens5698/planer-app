@@ -49,6 +49,19 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun get(id: Long): Task?
 
+    /** Volltextsuche in Titel, Notizen und Tag-Namen. */
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE title LIKE '%' || :q || '%' OR notes LIKE '%' || :q || '%'
+           OR id IN (SELECT task_tags.taskId FROM task_tags JOIN tags ON tags.id = task_tags.tagId
+                     WHERE tags.name LIKE '%' || :q || '%')
+        ORDER BY completedAt IS NOT NULL, dueAt IS NULL, dueAt
+        """,
+    )
+    fun search(q: String): Flow<List<TaskWithDetails>>
+
     @Query("SELECT * FROM tasks WHERE completedAt IS NULL AND remindAt > :now")
     suspend fun upcomingReminders(now: Long): List<Task>
 
@@ -64,6 +77,9 @@ interface TaskDao {
 
 @Dao
 interface ChecklistDao {
+    @Query("UPDATE checklist_items SET done = 0 WHERE taskId = :taskId")
+    suspend fun resetAll(taskId: Long)
+
     @Insert
     suspend fun insert(item: ChecklistItem): Long
 

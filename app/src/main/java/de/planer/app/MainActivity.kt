@@ -11,20 +11,31 @@ import de.planer.app.ui.PlanerNavHost
 import de.planer.app.ui.theme.PlanerTheme
 
 class MainActivity : ComponentActivity() {
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val app get() = application as PlanerApp
+
+    private val permissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            app.calendar.refreshPermission()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        val wanted = buildList {
+            add(Manifest.permission.READ_CALENDAR)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
         }
-        val repository = (application as PlanerApp).repository
+        if (savedInstanceState == null) permissions.launch(wanted.toTypedArray())
         setContent {
             PlanerTheme {
-                PlanerNavHost(repository)
+                PlanerNavHost(app.repository, app.calendar)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Berechtigung kann in den Systemeinstellungen geändert worden sein.
+        app.calendar.refreshPermission()
     }
 }

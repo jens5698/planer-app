@@ -11,6 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import de.planer.app.ui.ListIcon
 import de.planer.app.data.TaskRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -18,7 +25,7 @@ import de.planer.app.data.TaskRepository
 fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> Unit, onBack: () -> Unit) {
     val tasks by remember(listId) { repository.observeList(listId) }.collectAsState(initial = emptyList())
     val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
-    val name = lists.firstOrNull { it.id == listId }?.name.orEmpty()
+    val list = lists.firstOrNull { it.id == listId }
     TaskListContent(
         repository = repository,
         tasks = tasks,
@@ -27,7 +34,15 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
         onOpenTask = onOpenTask,
         topBar = {
             TopAppBar(
-                title = { Text(name) },
+                title = {
+                    if (list != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(ListIcon.of(list.icon).vector, contentDescription = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(list.name)
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück") }
                 },

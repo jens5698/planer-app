@@ -1,6 +1,7 @@
 package de.planer.app
 
 import android.app.Application
+import de.planer.app.calendar.CalendarRepository
 import de.planer.app.data.PlanerDatabase
 import de.planer.app.data.TaskRepository
 import de.planer.app.reminder.ReminderScheduler
@@ -14,10 +15,13 @@ class PlanerApp : Application() {
 
     lateinit var repository: TaskRepository
         private set
+    lateinit var calendar: CalendarRepository
+        private set
 
     override fun onCreate() {
         super.onCreate()
         repository = TaskRepository(PlanerDatabase.create(this), ReminderScheduler(this))
+        calendar = CalendarRepository(this)
         appScope.launch { repository.ensureDefaultList() }
     }
 }

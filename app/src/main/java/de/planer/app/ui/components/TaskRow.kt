@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.Priority
+import de.planer.app.data.Repeat
+import de.planer.app.data.label
 import de.planer.app.data.TaskWithDetails
 import java.time.Instant
 import java.time.ZoneId
@@ -56,6 +58,7 @@ fun TaskRow(
                 textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
             )
             val meta = buildList {
+                if (task.repeat != Repeat.NONE) add("↻ ${task.repeat.label}")
                 if (item.checklist.isNotEmpty()) add("${item.checklist.count { it.done }}/${item.checklist.size}")
                 addAll(item.tags.map { "#${it.name}" })
             }
