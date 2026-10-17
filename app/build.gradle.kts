@@ -13,8 +13,20 @@ android {
         applicationId = "de.planer.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI setzt BUILD_NUMBER, damit jede Release-APK eine höhere Version hat.
+        val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = buildNumber
+        versionName = "0.1.$buildNumber"
+    }
+
+    // Fester Debug-Schlüssel, damit neue CI-Builds sich über die alte Version installieren lassen.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

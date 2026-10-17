@@ -20,7 +20,8 @@ Android Studio öffnen und `app` starten, oder:
 ./gradlew assembleDebug
 ```
 
-Die GitHub-Action in `.github/workflows/build.yml` baut bei jedem Push eine Debug-APK.
+Die GitHub-Action in `.github/workflows/build.yml` baut bei jedem Push eine Debug-APK. Pushes auf `main` erscheinen als Release, die neueste APK gibt es immer unter
+https://github.com/jens5698/planer-app/releases/latest/download/planer.apk
 
 ## Später
 
