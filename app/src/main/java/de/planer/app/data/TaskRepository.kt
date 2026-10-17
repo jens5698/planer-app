@@ -46,7 +46,7 @@ class TaskRepository(
         if (lists.count() == 0) lists.insert(TaskList(name = "Eingang", icon = "INBOX"))
     }
 
-    suspend fun addList(name: String, icon: String) = lists.insert(TaskList(name = name, icon = icon))
+    suspend fun addList(name: String, icon: String, color: Long) = lists.insert(TaskList(name = name, icon = icon, color = color))
 
     suspend fun updateList(list: TaskList) = lists.update(list)
 

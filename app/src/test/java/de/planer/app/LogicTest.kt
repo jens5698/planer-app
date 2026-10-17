@@ -53,3 +53,11 @@ class LogicTest {
         assertFalse(e.occursOn(day.minusDays(1), berlin))
     }
 }
+
+class ListIconTest {
+    @Test fun iconNamesAreUniqueAndUnknownFallsBack() {
+        val names = de.planer.app.ui.ListIcon.entries.map { it.name }
+        assertEquals(names.size, names.toSet().size)
+        assertEquals(de.planer.app.ui.ListIcon.LIST, de.planer.app.ui.ListIcon.of("GIBTS_NICHT"))
+    }
+}

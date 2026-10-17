@@ -33,15 +33,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.TaskList
 import de.planer.app.data.TaskRepository
 import de.planer.app.ui.ListIcon
+import de.planer.app.ui.components.ColorPicker
 import de.planer.app.ui.components.IconPicker
 import kotlinx.coroutines.launch
 
 /** Zustand des Listen-Dialogs; [list] ist null beim Anlegen. */
-private data class ListDraft(val list: TaskList?, val name: String, val icon: ListIcon)
+private data class ListDraft(val list: TaskList?, val name: String, val icon: ListIcon, val color: Long)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +63,7 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { draft = ListDraft(null, "", ListIcon.LIST) }) {
+            FloatingActionButton(onClick = { draft = ListDraft(null, "", ListIcon.LIST, ListIcon.LIST.color) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Liste anlegen")
             }
         },
@@ -69,10 +71,10 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
         LazyColumn(Modifier.padding(padding)) {
             items(lists, key = { it.id }) { list ->
                 ListItem(
-                    leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null) },
+                    leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = Color(list.color)) },
                     headlineContent = { Text(list.name) },
                     trailingContent = {
-                        IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon)) }) {
+                        IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon), list.color) }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Liste bearbeiten")
                         }
                     },
@@ -103,7 +105,10 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Text("Symbol", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
-                    IconPicker(selected = d.icon, onSelect = { draft = d.copy(icon = it) })
+                    // Ein neues Symbol bringt seine Vorschlagsfarbe mit; die Farbe lässt sich danach ändern.
+                    IconPicker(selected = d.icon, color = d.color, onSelect = { draft = d.copy(icon = it, color = it.color) })
+                    Text("Farbe", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+                    ColorPicker(selected = d.color, onSelect = { draft = d.copy(color = it) })
                     // Die letzte Liste bleibt, damit neue Aufgaben immer ein Ziel haben.
                     if (d.list != null && lists.size > 1) {
                         TextButton(
@@ -120,8 +125,8 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
                 TextButton(enabled = d.name.isNotBlank(), onClick = {
                     val name = d.name.trim()
                     scope.launch {
-                        if (d.list == null) repository.addList(name, d.icon.name)
-                        else repository.updateList(d.list.copy(name = name, icon = d.icon.name))
+                        if (d.list == null) repository.addList(name, d.icon.name, d.color)
+                        else repository.updateList(d.list.copy(name = name, icon = d.icon.name, color = d.color))
                     }
                     draft = null
                 }) { Text("Speichern") }

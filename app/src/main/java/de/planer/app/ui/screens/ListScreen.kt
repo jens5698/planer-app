@@ -37,7 +37,7 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
                 title = {
                     if (list != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(ListIcon.of(list.icon).vector, contentDescription = null)
+                            Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = androidx.compose.ui.graphics.Color(list.color))
                             Spacer(Modifier.width(12.dp))
                             Text(list.name)
                         }
