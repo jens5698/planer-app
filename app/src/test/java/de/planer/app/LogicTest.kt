@@ -6,6 +6,7 @@ import de.planer.app.data.Repeat
 import de.planer.app.data.next
 import de.planer.app.ui.components.parseQuickAdd
 import de.planer.app.ui.screens.visibleDays
+import de.planer.app.ui.components.swapped
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -138,5 +139,13 @@ class UntilTest {
         assertEquals(13, de.planer.app.ui.screens.daysUntil(today, LocalDate.of(2026, 10, 31)))
         val sections = de.planer.app.ui.screens.buildAgenda(today, 13, emptyList(), emptyList())
         assertEquals("Sa., 31. Okt.", sections.last().title)
+    }
+}
+
+class ReorderTest {
+    @Test fun swappedMovesNeighbours() {
+        val l = listOf("a", "b", "c")
+        assertEquals(listOf("b", "a", "c"), l.swapped(0, 1))
+        assertEquals(listOf("a", "c", "b"), l.swapped(2, -1))
     }
 }

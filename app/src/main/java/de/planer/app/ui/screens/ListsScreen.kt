@@ -12,6 +12,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import de.planer.app.ui.components.ReorderableLists
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
@@ -97,7 +102,10 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
             }
             item {
                 SectionCard("Listen", lists.size, collapsed = false, onToggle = {}) {
-                    lists.forEach { list ->
+                    ReorderableLists(
+                        lists = lists,
+                        onReorder = { ids -> scope.launch { repository.reorderLists(ids) } },
+                    ) { list, handle ->
                         ListItem(
                             leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = Color(list.color)) },
                             headlineContent = { Text(list.name) },
@@ -108,6 +116,9 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
                                     }
                                     IconButton(onClick = { deleting = list }) {
                                         Icon(Icons.Outlined.Delete, contentDescription = "Liste löschen", tint = MaterialTheme.colorScheme.outline)
+                                    }
+                                    Box(handle.size(48.dp), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Filled.DragHandle, contentDescription = "Zum Verschieben ziehen", tint = MaterialTheme.colorScheme.outline)
                                     }
                                 }
                             },

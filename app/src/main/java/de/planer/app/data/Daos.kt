@@ -17,6 +17,12 @@ interface TaskListDao {
     @Query("SELECT COUNT(*) FROM task_lists")
     suspend fun count(): Int
 
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM task_lists")
+    suspend fun nextSortOrder(): Int
+
+    @Query("UPDATE task_lists SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
     @Insert
     suspend fun insert(list: TaskList): Long
 

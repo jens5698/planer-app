@@ -1,6 +1,7 @@
 package de.planer.app.data
 
 import de.planer.app.reminder.ReminderScheduler
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
@@ -53,7 +54,14 @@ class TaskRepository(
         if (lists.count() == 0) lists.insert(TaskList(name = "Eingang", icon = "INBOX"))
     }
 
-    suspend fun addList(name: String, icon: String, color: Long) = lists.insert(TaskList(name = name, icon = icon, color = color))
+    /** Neue Listen kommen ans Ende. */
+    suspend fun addList(name: String, icon: String, color: Long) =
+        lists.insert(TaskList(name = name, icon = icon, color = color, sortOrder = lists.nextSortOrder()))
+
+    /** Speichert die Reihenfolge der Listen so, wie sie in [ids] stehen. */
+    suspend fun reorderLists(ids: List<Long>) = db.withTransaction {
+        ids.forEachIndexed { index, id -> lists.setSortOrder(id, index) }
+    }
 
     suspend fun updateList(list: TaskList) = lists.update(list)
 
