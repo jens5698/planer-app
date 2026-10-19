@@ -124,3 +124,13 @@ class CompletedTest {
         assertTrue(de.planer.app.ui.components.completedLabel(at).matches(Regex("Erledigt 5\\. \\S+, 14:32")))
     }
 }
+
+class UntilTest {
+    @Test fun daysUntilIncludesBothEnds() {
+        val today = LocalDate.of(2026, 10, 19)
+        assertEquals(1, de.planer.app.ui.screens.daysUntil(today, today))
+        assertEquals(13, de.planer.app.ui.screens.daysUntil(today, LocalDate.of(2026, 10, 31)))
+        val sections = de.planer.app.ui.screens.buildAgenda(today, 13, emptyList(), emptyList())
+        assertEquals("Sa., 31. Okt.", sections.last().title)
+    }
+}

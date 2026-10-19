@@ -35,7 +35,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 
 private val tabs = listOf(
     Tab("today", "Heute", Icons.Filled.Today),
-    Tab("week", "7 Tage", Icons.Filled.DateRange),
+    Tab("week", "Planung", Icons.Filled.DateRange),
     Tab("lists", "Listen", Icons.AutoMirrored.Filled.List),
     Tab("calendar", "Kalender", Icons.Filled.CalendarMonth),
 )
@@ -76,7 +76,7 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
                 AgendaScreen(repository, calendar, days = 1, title = "Heute", empty = "Nichts mehr für heute.", onOpenTask = openTask, onSearch = openSearch)
             }
             composable("week") {
-                AgendaScreen(repository, calendar, days = 7, title = "Nächste 7 Tage", empty = "Keine Aufgaben in den nächsten 7 Tagen.", onOpenTask = openTask, onSearch = openSearch)
+                AgendaScreen(repository, calendar, days = 7, title = "Nächste 7 Tage", empty = "Keine Aufgaben in den nächsten 7 Tagen.", onOpenTask = openTask, onSearch = openSearch, rangeSelectable = true)
             }
             composable("lists") {
                 ListsScreen(
