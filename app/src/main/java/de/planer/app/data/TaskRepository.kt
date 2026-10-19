@@ -44,6 +44,9 @@ class TaskRepository(
             endExclusive.atStartOfDay(zone).toInstant().toEpochMilli(),
         )
 
+    fun observeCompletedSince(since: LocalDate, zone: ZoneId = ZoneId.systemDefault()) =
+        tasks.observeCompletedSince(since.atStartOfDay(zone).toInstant().toEpochMilli())
+
     fun search(query: String): Flow<List<TaskWithDetails>> = tasks.search(query.trim())
 
     suspend fun ensureDefaultList() {
@@ -77,6 +80,13 @@ class TaskRepository(
             val current = Instant.ofEpochMilli(due).atZone(zone)
             val next = current.with(task.repeat.next(current.toLocalDate()))
             val delta = next.toInstant().toEpochMilli() - due
+            // Erledigte Instanz festhalten, damit sie in "Erledigt" und im Verlauf der Liste auftaucht.
+            tasks.insert(
+                task.copy(
+                    id = 0, repeat = Repeat.NONE, remindAt = null,
+                    completedAt = System.currentTimeMillis(), createdAt = System.currentTimeMillis(),
+                ),
+            )
             updateTask(task.copy(dueAt = due + delta, remindAt = task.remindAt?.plus(delta)))
             checklist.resetAll(task.id)
             return

@@ -8,6 +8,15 @@ import java.util.Locale
 
 private val shortDay = DateTimeFormatter.ofPattern("EE", Locale.GERMAN)
 private val dayMonth = DateTimeFormatter.ofPattern("d. MMM", Locale.GERMAN)
+private val dayMonthYear = DateTimeFormatter.ofPattern("d. MMM yyyy", Locale.GERMAN)
+private val time = DateTimeFormatter.ofPattern("HH:mm")
+
+/** "Erledigt 19. Okt., 14:32" (mit Jahr, wenn nicht das aktuelle). */
+fun completedLabel(epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): String {
+    val at = Instant.ofEpochMilli(epochMillis).atZone(zone)
+    val date = if (at.year == LocalDate.now(zone).year) at.format(dayMonth) else at.format(dayMonthYear)
+    return "Erledigt $date, ${at.format(time)}"
+}
 
 fun Long.toLocalDate(zone: ZoneId = ZoneId.systemDefault()): LocalDate =
     Instant.ofEpochMilli(this).atZone(zone).toLocalDate()

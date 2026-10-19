@@ -24,6 +24,7 @@ import androidx.navigation.navArgument
 import de.planer.app.calendar.CalendarRepository
 import de.planer.app.data.TaskRepository
 import de.planer.app.ui.screens.CalendarScreen
+import de.planer.app.ui.screens.CompletedScreen
 import de.planer.app.ui.screens.ListScreen
 import de.planer.app.ui.screens.ListsScreen
 import de.planer.app.ui.screens.SearchScreen
@@ -77,7 +78,15 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
             composable("week") {
                 AgendaScreen(repository, calendar, days = 7, title = "Nächste 7 Tage", empty = "Keine Aufgaben in den nächsten 7 Tagen.", onOpenTask = openTask, onSearch = openSearch)
             }
-            composable("lists") { ListsScreen(repository, onOpenList = { nav.navigate("list/$it") }, onSearch = openSearch) }
+            composable("lists") {
+                ListsScreen(
+                    repository,
+                    onOpenList = { nav.navigate("list/$it") },
+                    onSearch = openSearch,
+                    onCompleted = { nav.navigate("completed") },
+                )
+            }
+            composable("completed") { CompletedScreen(repository, openTask, onBack = { nav.popBackStack() }) }
             composable("calendar") { CalendarScreen(repository, calendar, openTask) }
             composable("search") { SearchScreen(repository, openTask, onBack = { nav.popBackStack() }) }
             composable("list/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {

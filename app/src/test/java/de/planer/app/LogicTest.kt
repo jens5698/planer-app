@@ -89,3 +89,38 @@ class AgendaTest {
         assertEquals(1, sections[3].events.size)
     }
 }
+
+class CompletedTest {
+    private fun done(id: Long, at: java.time.LocalDateTime) = de.planer.app.data.TaskWithDetails(
+        de.planer.app.data.Task(
+            id = id, listId = 1, title = "T$id",
+            completedAt = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+        ),
+        emptyList(), emptyList(),
+    )
+
+    @Test fun rangesAreRollingAndIncludeToday() {
+        val today = LocalDate.of(2026, 10, 19)
+        assertEquals(LocalDate.of(2026, 10, 13), de.planer.app.ui.screens.CompletedRange.WEEK.since(today))
+        assertEquals(LocalDate.of(2026, 9, 20), de.planer.app.ui.screens.CompletedRange.MONTH.since(today))
+        assertEquals(LocalDate.of(2025, 10, 20), de.planer.app.ui.screens.CompletedRange.YEAR.since(today))
+    }
+
+    @Test fun weekGroupsByDayNewestFirstYearByMonth() {
+        val today = LocalDate.of(2026, 10, 19)
+        val tasks = listOf(
+            done(1, today.atTime(9, 0)), done(2, today.minusDays(1).atTime(18, 0)),
+            done(3, today.atTime(14, 32)), done(4, LocalDate.of(2026, 3, 2).atTime(8, 0)),
+        )
+        val week = de.planer.app.ui.screens.buildCompleted(de.planer.app.ui.screens.CompletedRange.WEEK, tasks.take(3), today)
+        assertEquals(listOf("Mo., Heute", "So., Gestern"), week.map { it.title })
+        assertEquals(2, week.first().tasks.size)
+        val year = de.planer.app.ui.screens.buildCompleted(de.planer.app.ui.screens.CompletedRange.YEAR, tasks, today)
+        assertEquals(listOf("Oktober 2026", "März 2026"), year.map { it.title })
+    }
+
+    @Test fun completedLabelShowsDateAndTime() {
+        val at = LocalDate.now().withDayOfMonth(5).atTime(14, 32).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        assertTrue(de.planer.app.ui.components.completedLabel(at).matches(Regex("Erledigt 5\\. \\S+, 14:32")))
+    }
+}

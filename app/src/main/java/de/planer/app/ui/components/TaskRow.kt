@@ -46,6 +46,8 @@ fun TaskRow(
     list: TaskList?,
     onToggle: () -> Unit,
     onClick: () -> Unit,
+    /** Ersetzt das Fälligkeitsdatum, z. B. durch "Erledigt 14:32". */
+    dateText: String? = null,
 ) {
     val task = item.task
     val scheme = MaterialTheme.colorScheme
@@ -78,7 +80,10 @@ fun TaskRow(
                     if (item.checklist.isNotEmpty()) add("${item.checklist.count { it.done }}/${item.checklist.size}")
                     addAll(item.tags.map { "#${it.name}" })
                 }
-                if (dueDay != null) {
+                if (dateText != null) {
+                    Text(dateText, style = MaterialTheme.typography.bodyMedium, color = scheme.tertiary)
+                    if (meta.isNotEmpty()) Spacer(Modifier.width(8.dp))
+                } else if (dueDay != null) {
                     Text(
                         relativeDate(dueDay),
                         style = MaterialTheme.typography.bodyMedium,

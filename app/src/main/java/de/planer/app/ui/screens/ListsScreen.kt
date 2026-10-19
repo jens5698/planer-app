@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -47,7 +48,7 @@ private data class ListDraft(val list: TaskList?, val name: String, val icon: Li
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch: () -> Unit) {
+fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch: () -> Unit, onCompleted: () -> Unit) {
     val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
     val tags by remember { repository.observeTags() }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
@@ -73,6 +74,23 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
+            item {
+                androidx.compose.material3.Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    ListItem(
+                        leadingContent = {
+                            Icon(Icons.Filled.TaskAlt, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        },
+                        headlineContent = { Text("Erledigt") },
+                        supportingContent = { Text("Letzte Woche, letzter Monat, letztes Jahr") },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier.clickable(onClick = onCompleted),
+                    )
+                }
+            }
             item {
                 SectionCard("Listen", lists.size, collapsed = false, onToggle = {}) {
                     lists.forEach { list ->

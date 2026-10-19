@@ -62,6 +62,10 @@ interface TaskDao {
     )
     fun search(q: String): Flow<List<TaskWithDetails>>
 
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE completedAt >= :since ORDER BY completedAt DESC")
+    fun observeCompletedSince(since: Long): Flow<List<TaskWithDetails>>
+
     @Query("SELECT * FROM tasks WHERE completedAt IS NULL AND remindAt > :now")
     suspend fun upcomingReminders(now: Long): List<Task>
 

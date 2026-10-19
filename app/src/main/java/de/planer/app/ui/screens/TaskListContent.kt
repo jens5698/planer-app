@@ -33,6 +33,7 @@ import de.planer.app.ui.components.EventRow
 import de.planer.app.ui.components.QuickAddDialog
 import de.planer.app.ui.components.SectionCard
 import de.planer.app.ui.components.TaskRow
+import de.planer.app.ui.components.completedLabel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -43,6 +44,8 @@ data class AgendaSection(
     val tasks: List<TaskWithDetails>,
     val events: List<CalendarEvent> = emptyList(),
     val warn: Boolean = false,
+    /** Zeilen zeigen die Erledigungszeit statt des Fälligkeitsdatums. */
+    val showCompletion: Boolean = false,
 ) {
     val count get() = tasks.size + events.size
 }
@@ -64,6 +67,7 @@ fun TaskListContent(
     topBar: @Composable () -> Unit,
     empty: String,
     initiallyCollapsed: Set<String> = emptySet(),
+    showAdd: Boolean = true,
 ) {
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
@@ -75,7 +79,7 @@ fun TaskListContent(
         topBar = topBar,
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(
+            if (showAdd) FloatingActionButton(
                 onClick = { adding = true },
                 shape = CircleShape,
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -101,6 +105,7 @@ fun TaskListContent(
                             list = listsById[item.task.listId],
                             onToggle = { scope.launch { repository.toggleCompleted(item.task) } },
                             onClick = { onOpenTask(item.task.id) },
+                            dateText = if (section.showCompletion) item.task.completedAt?.let(::completedLabel) else null,
                         )
                     }
                     section.events.forEach { EventRow(it) }
