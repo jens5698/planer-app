@@ -57,7 +57,14 @@ class TaskRepository(
 
     suspend fun updateList(list: TaskList) = lists.update(list)
 
-    suspend fun deleteList(list: TaskList) = lists.delete(list)
+    suspend fun countOpenInList(listId: Long) = tasks.countOpenInList(listId)
+
+    /** Löscht die Liste samt Aufgaben; ist danach keine Liste mehr da, entsteht wieder "Eingang". */
+    suspend fun deleteList(list: TaskList) {
+        tasks.idsInList(list.id).forEach(reminders::cancel)
+        lists.delete(list)
+        ensureDefaultList()
+    }
 
     suspend fun addTask(task: Task): Long {
         val id = tasks.insert(task)

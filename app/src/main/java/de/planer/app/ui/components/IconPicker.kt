@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.size
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,28 +24,38 @@ import androidx.compose.ui.unit.dp
 import de.planer.app.ui.ListColors
 import de.planer.app.ui.ListIcon
 
-/** Symbolraster; jedes Symbol in seiner Vorschlagsfarbe, das gewählte in der Listenfarbe hinterlegt. */
+/** Symbolraster nach Themen; jedes Symbol in seiner Vorschlagsfarbe, das gewählte in der Listenfarbe hinterlegt. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IconPicker(selected: ListIcon, color: Long, onSelect: (ListIcon) -> Unit) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ListIcon.entries.forEach { icon ->
-            val isSelected = icon == selected
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .background(if (isSelected) Color(color) else Color.Transparent, CircleShape)
-                    .clickable { onSelect(icon) },
-                contentAlignment = Alignment.Center,
+    Column {
+        ListIcon.byCategory.forEach { (category, icons) ->
+            Text(
+                category.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(
-                    icon.vector,
-                    contentDescription = icon.label,
-                    tint = if (isSelected) Color.White else Color(icon.color),
-                )
+                icons.forEach { icon ->
+                    val isSelected = icon == selected
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .background(if (isSelected) Color(color) else Color.Transparent, CircleShape)
+                            .clickable { onSelect(icon) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            icon.vector,
+                            contentDescription = icon.label,
+                            tint = if (isSelected) Color.White else Color(icon.color),
+                        )
+                    }
+                }
             }
         }
     }

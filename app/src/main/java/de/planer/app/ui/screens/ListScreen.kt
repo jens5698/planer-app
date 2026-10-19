@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -26,6 +28,10 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
     val tasks by remember(listId) { repository.observeList(listId) }.collectAsState(initial = emptyList())
     val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
     val list = lists.firstOrNull { it.id == listId }
+    var deleting by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (deleting && list != null) {
+        de.planer.app.ui.components.DeleteListDialog(repository, list, onDismiss = { deleting = false }, onDeleted = onBack)
+    }
     TaskListContent(
         repository = repository,
         sections = listOf(
@@ -45,6 +51,11 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
                             Spacer(Modifier.width(12.dp))
                             Text(list.name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { deleting = true }) {
+                        Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = "Liste löschen")
                     }
                 },
                 navigationIcon = {

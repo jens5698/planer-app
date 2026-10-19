@@ -59,6 +59,12 @@ class ListIconTest {
         val names = de.planer.app.ui.ListIcon.entries.map { it.name }
         assertEquals(names.size, names.toSet().size)
         assertEquals(de.planer.app.ui.ListIcon.LIST, de.planer.app.ui.ListIcon.of("GIBTS_NICHT"))
+        // Bereits gespeicherte Namen aus früheren Versionen müssen weiter existieren.
+        listOf("INBOX", "SHOPPING", "GARDEN", "WATER", "NATURE", "PHONE").forEach {
+            assertEquals(it, de.planer.app.ui.ListIcon.of(it).name)
+        }
+        assertTrue(de.planer.app.ui.ListIcon.entries.size >= 120)
+        assertEquals(de.planer.app.ui.IconCategory.entries.toSet(), de.planer.app.ui.ListIcon.byCategory.keys)
     }
 }
 

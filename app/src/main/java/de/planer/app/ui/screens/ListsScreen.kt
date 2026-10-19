@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -39,6 +41,7 @@ import de.planer.app.data.TaskList
 import de.planer.app.data.TaskRepository
 import de.planer.app.ui.ListIcon
 import de.planer.app.ui.components.ColorPicker
+import de.planer.app.ui.components.DeleteListDialog
 import de.planer.app.ui.components.IconPicker
 import de.planer.app.ui.components.SectionCard
 import kotlinx.coroutines.launch
@@ -53,6 +56,7 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
     val tags by remember { repository.observeTags() }.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf<ListDraft?>(null) }
+    var deleting by remember { mutableStateOf<TaskList?>(null) }
 
     Scaffold(
         topBar = {
@@ -98,8 +102,13 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
                             leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null, tint = Color(list.color)) },
                             headlineContent = { Text(list.name) },
                             trailingContent = {
-                                IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon), list.color) }) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Liste bearbeiten", tint = MaterialTheme.colorScheme.outline)
+                                Row {
+                                    IconButton(onClick = { draft = ListDraft(list, list.name, ListIcon.of(list.icon), list.color) }) {
+                                        Icon(Icons.Filled.Edit, contentDescription = "Liste bearbeiten", tint = MaterialTheme.colorScheme.outline)
+                                    }
+                                    IconButton(onClick = { deleting = list }) {
+                                        Icon(Icons.Outlined.Delete, contentDescription = "Liste löschen", tint = MaterialTheme.colorScheme.outline)
+                                    }
                                 }
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -123,6 +132,10 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
         }
     }
 
+    deleting?.let { list ->
+        DeleteListDialog(repository, list, onDismiss = { deleting = null })
+    }
+
     draft?.let { d ->
         AlertDialog(
             onDismissRequest = { draft = null },
@@ -141,11 +154,10 @@ fun ListsScreen(repository: TaskRepository, onOpenList: (Long) -> Unit, onSearch
                     IconPicker(selected = d.icon, color = d.color, onSelect = { draft = d.copy(icon = it, color = it.color) })
                     Text("Farbe", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
                     ColorPicker(selected = d.color, onSelect = { draft = d.copy(color = it) })
-                    // Die letzte Liste bleibt, damit neue Aufgaben immer ein Ziel haben.
-                    if (d.list != null && lists.size > 1) {
+                    if (d.list != null) {
                         TextButton(
                             onClick = {
-                                scope.launch { repository.deleteList(d.list) }
+                                deleting = d.list
                                 draft = null
                             },
                             modifier = Modifier.padding(top = 8.dp),

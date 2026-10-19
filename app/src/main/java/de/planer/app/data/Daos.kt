@@ -66,6 +66,12 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE completedAt >= :since ORDER BY completedAt DESC")
     fun observeCompletedSince(since: Long): Flow<List<TaskWithDetails>>
 
+    @Query("SELECT id FROM tasks WHERE listId = :listId")
+    suspend fun idsInList(listId: Long): List<Long>
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE listId = :listId AND completedAt IS NULL")
+    suspend fun countOpenInList(listId: Long): Int
+
     @Query("SELECT * FROM tasks WHERE completedAt IS NULL AND remindAt > :now")
     suspend fun upcomingReminders(now: Long): List<Task>
 
