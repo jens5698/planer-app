@@ -17,6 +17,22 @@ fun Repeat.next(date: LocalDate): LocalDate = when (this) {
     Repeat.YEARLY -> date.plusYears(1)
 }
 
+/**
+ * Alle Termine einer Serie ab [start] im Bereich [from, toExclusive), höchstens bis [until].
+ * [start] selbst zählt mit, wenn es im Bereich liegt.
+ */
+fun Repeat.occurrences(start: LocalDate, from: LocalDate, toExclusive: LocalDate, until: LocalDate?): List<LocalDate> {
+    if (this == Repeat.NONE) return if (!start.isBefore(from) && start.isBefore(toExclusive)) listOf(start) else emptyList()
+    val result = mutableListOf<LocalDate>()
+    var d = start
+    var guard = 0
+    while (d.isBefore(toExclusive) && (until == null || !d.isAfter(until)) && guard++ < 1000) {
+        if (!d.isBefore(from)) result += d
+        d = next(d)
+    }
+    return result
+}
+
 val Repeat.label: String
     get() = when (this) {
         Repeat.NONE -> "Nie"

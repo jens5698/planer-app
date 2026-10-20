@@ -4,6 +4,7 @@ import de.planer.app.calendar.CalendarEvent
 import de.planer.app.data.Priority
 import de.planer.app.data.Repeat
 import de.planer.app.data.next
+import de.planer.app.data.occurrences
 import de.planer.app.ui.components.parseQuickAdd
 import de.planer.app.ui.screens.visibleDays
 import de.planer.app.ui.components.swapped
@@ -147,5 +148,38 @@ class ReorderTest {
         val l = listOf("a", "b", "c")
         assertEquals(listOf("b", "a", "c"), l.swapped(0, 1))
         assertEquals(listOf("a", "c", "b"), l.swapped(2, -1))
+    }
+}
+
+class SeriesTest {
+    private val zone = ZoneId.systemDefault()
+
+    @Test fun weeklyOccurrencesStopAtEndDate() {
+        val start = LocalDate.of(2026, 10, 20)
+        val until = LocalDate.of(2026, 11, 10)
+        val occ = Repeat.WEEKLY.occurrences(start, start, start.plusYears(1), until)
+        assertEquals(
+            listOf(LocalDate.of(2026, 10, 20), LocalDate.of(2026, 10, 27), LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 10)),
+            occ,
+        )
+    }
+
+    @Test fun previewsSkipCurrentDueAndRespectEnd() {
+        val today = LocalDate.of(2026, 10, 20)
+        val task = de.planer.app.data.TaskWithDetails(
+            de.planer.app.data.Task(
+                id = 7, listId = 1, title = "Chor",
+                dueAt = today.atTime(19, 30).atZone(zone).toInstant().toEpochMilli(),
+                repeat = Repeat.WEEKLY, repeatUntil = LocalDate.of(2026, 11, 3).toEpochDay(),
+            ),
+            emptyList(), emptyList(),
+        )
+        val previews = de.planer.app.ui.screens.seriesPreviews(listOf(task), today, today.plusMonths(2), zone)
+        assertEquals(setOf(LocalDate.of(2026, 10, 27), LocalDate.of(2026, 11, 3)), previews.keys)
+        val time = java.time.Instant.ofEpochMilli(previews.getValue(LocalDate.of(2026, 10, 27)).single().task.dueAt!!).atZone(zone)
+        assertEquals(19, time.hour)
+        assertEquals(30, time.minute)
+        val agenda = de.planer.app.ui.screens.buildAgenda(today, 14, listOf(task), emptyList())
+        assertEquals(1, agenda.first { it.key == "2026-10-27" }.previews.size)
     }
 }

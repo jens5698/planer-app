@@ -18,10 +18,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.Priority
+import de.planer.app.data.Repeat
+import androidx.compose.material3.MaterialTheme
 import java.time.LocalDate
 import java.time.ZoneId
 
-data class QuickAddResult(val title: String, val dueAt: Long?, val priority: Priority, val tags: List<String>)
+data class QuickAddResult(
+    val title: String,
+    val dueAt: Long?,
+    val priority: Priority,
+    val tags: List<String>,
+    val repeat: Repeat = Repeat.NONE,
+    val repeatUntil: Long? = null,
+)
 
 /**
  * Schnelleingabe wie in TickTick: "#tag" im Titel wird zum Tag, "!1".."!3" setzt die Priorität.
@@ -48,6 +57,8 @@ fun QuickAddDialog(
 ) {
     var text by remember { mutableStateOf("") }
     var due by remember { mutableStateOf(defaultDue) }
+    var repeat by remember { mutableStateOf(Repeat.NONE) }
+    var until by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -66,12 +77,21 @@ fun QuickAddDialog(
                         due = if (due == today.plusDays(1)) null else today.plusDays(1)
                     }, { Text("Morgen") })
                 }
+                Text("Wiederholen", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                RepeatPicker(repeat, until, start = due ?: today) { r, u ->
+                    repeat = r
+                    until = u
+                    // Eine Serie braucht einen ersten Termin.
+                    if (r != Repeat.NONE && due == null) due = today
+                }
             }
         },
         confirmButton = {
             TextButton(
                 enabled = text.isNotBlank(),
-                onClick = { onAdd(parseQuickAdd(text, due)) },
+                onClick = {
+                    onAdd(parseQuickAdd(text, due).copy(repeat = repeat, repeatUntil = until?.toEpochDay()))
+                },
             ) { Text("Hinzufügen") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },

@@ -69,6 +69,8 @@ fun CalendarScreen(repository: TaskRepository, calendar: CalendarRepository, onO
 
     val rangeTasks by remember(rangeStart, rangeEnd) { repository.observeRange(rangeStart, rangeEnd) }
         .collectAsState(initial = emptyList())
+    val recurring by remember { repository.observeOpenRecurring() }.collectAsState(initial = emptyList())
+    val previews = seriesPreviews(recurring, rangeStart, rangeEnd)
     val calendarEnabled by calendar.enabled.collectAsState()
     val rangeEvents by produceState(emptyList<CalendarEvent>(), rangeStart, rangeEnd, calendarEnabled) {
         value = calendar.events(rangeStart, rangeEnd)
@@ -76,7 +78,7 @@ fun CalendarScreen(repository: TaskRepository, calendar: CalendarRepository, onO
 
     val taskDays = rangeTasks.mapNotNull { t ->
         t.task.dueAt?.takeIf { !t.task.isCompleted }?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
-    }.toSet()
+    }.toSet() + previews.keys
     val dayTasks = rangeTasks.filter { t ->
         t.task.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } == selected
     }
@@ -84,7 +86,7 @@ fun CalendarScreen(repository: TaskRepository, calendar: CalendarRepository, onO
 
     TaskListContent(
         repository = repository,
-        sections = listOf(AgendaSection("day", de.planer.app.ui.components.dayTitle(selected), dayTasks, dayEvents)),
+        sections = listOf(AgendaSection("day", de.planer.app.ui.components.dayTitle(selected), dayTasks, dayEvents, previews = previews[selected].orEmpty())),
         targetListId = { repository.observeLists().first().first().id },
         defaultDue = selected,
         onOpenTask = onOpenTask,

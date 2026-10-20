@@ -45,6 +45,8 @@ data class Task(
     val remindAt: Long? = null,
     val completedAt: Long? = null,
     val repeat: Repeat = Repeat.NONE,
+    /** Letzter Tag der Serie als Epoch-Day; null = endlos. */
+    val repeatUntil: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val sortOrder: Int = 0,
 ) {

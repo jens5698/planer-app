@@ -46,8 +46,10 @@ data class AgendaSection(
     val warn: Boolean = false,
     /** Zeilen zeigen die Erledigungszeit statt des Fälligkeitsdatums. */
     val showCompletion: Boolean = false,
+    /** Künftige Termine von Serien; nur zur Ansicht, abhaken geht am aktuellen Termin. */
+    val previews: List<TaskWithDetails> = emptyList(),
 ) {
-    val count get() = tasks.size + events.size
+    val count get() = tasks.size + events.size + previews.size
 }
 
 @Composable
@@ -108,6 +110,15 @@ fun TaskListContent(
                             dateText = if (section.showCompletion) item.task.completedAt?.let(::completedLabel) else null,
                         )
                     }
+                    section.previews.forEach { item ->
+                        TaskRow(
+                            item = item,
+                            list = listsById[item.task.listId],
+                            onToggle = {},
+                            onClick = { onOpenTask(item.task.id) },
+                            enabled = false,
+                        )
+                    }
                     section.events.forEach { EventRow(it) }
                 }
             }
@@ -124,7 +135,10 @@ fun TaskListContent(
                 adding = false
                 scope.launch {
                     val id = repository.addTask(
-                        Task(listId = targetListId(), title = r.title, dueAt = r.dueAt, priority = r.priority),
+                        Task(
+                            listId = targetListId(), title = r.title, dueAt = r.dueAt, priority = r.priority,
+                            repeat = r.repeat, repeatUntil = r.repeatUntil,
+                        ),
                     )
                     r.tags.forEach { repository.addTag(id, it) }
                 }

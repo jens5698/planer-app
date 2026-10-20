@@ -16,6 +16,13 @@ class Converters {
     @TypeConverter fun intToRepeat(i: Int): Repeat = Repeat.entries[i]
 }
 
+/** v3: Enddatum für Serien. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN repeatUntil INTEGER")
+    }
+}
+
 /** v2: Listensymbol und Wiederholung. */
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -26,7 +33,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 
 @Database(
     entities = [TaskList::class, Task::class, ChecklistItem::class, Tag::class, TaskTagCrossRef::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -39,7 +46,7 @@ abstract class PlanerDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): PlanerDatabase =
             Room.databaseBuilder(context, PlanerDatabase::class.java, "planer.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

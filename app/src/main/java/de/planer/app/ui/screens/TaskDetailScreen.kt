@@ -47,6 +47,7 @@ import de.planer.app.data.label
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import de.planer.app.data.TaskRepository
+import de.planer.app.ui.components.RepeatPicker
 import de.planer.app.ui.components.formatDue
 import de.planer.app.ui.components.priorityColor
 import kotlinx.coroutines.launch
@@ -143,19 +144,16 @@ fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Uni
             }
 
             Text("Wiederholen", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Repeat.entries.forEach { r ->
-                    FilterChip(
-                        selected = task.repeat == r,
-                        onClick = {
-                            // Wiederholung braucht ein Startdatum; ohne Datum wird heute gesetzt.
-                            val due = task.dueAt ?: if (r == Repeat.NONE) null else
-                                java.time.LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                            scope.launch { repository.updateTask(task.copy(repeat = r, dueAt = due)) }
-                        },
-                        label = { Text(r.label) },
-                    )
-                }
+            val zone = ZoneId.systemDefault()
+            val today = java.time.LocalDate.now(zone)
+            RepeatPicker(
+                repeat = task.repeat,
+                until = task.repeatUntil?.let(java.time.LocalDate::ofEpochDay),
+                start = task.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } ?: today,
+            ) { r, until ->
+                // Wiederholung braucht ein Startdatum; ohne Datum wird heute gesetzt.
+                val due = task.dueAt ?: if (r == Repeat.NONE) null else today.atStartOfDay(zone).toInstant().toEpochMilli()
+                scope.launch { repository.updateTask(task.copy(repeat = r, repeatUntil = until?.toEpochDay(), dueAt = due)) }
             }
 
             OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text("Notizen") }, minLines = 3)

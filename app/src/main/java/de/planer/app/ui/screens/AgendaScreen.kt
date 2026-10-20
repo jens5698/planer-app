@@ -35,7 +35,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import de.planer.app.calendar.CalendarEvent
 import de.planer.app.calendar.CalendarRepository
+import de.planer.app.data.Repeat
 import de.planer.app.data.TaskRepository
+import de.planer.app.data.next
+import de.planer.app.data.occurrences
+import java.time.ZoneId
 import de.planer.app.data.TaskWithDetails
 import de.planer.app.ui.components.dayTitle
 import de.planer.app.ui.components.toLocalDate
@@ -51,12 +55,34 @@ import java.util.Locale
  * Karten "Überfällig" und je Tag mit Aufgaben und Terminen.
  * Mehrtägige Termine erscheinen nur am ersten sichtbaren Tag.
  */
+/**
+ * Künftige Termine wiederkehrender Aufgaben im Bereich [from, toExclusive), ohne den
+ * aktuellen (echten) Termin. Uhrzeit und Erinnerungsabstand bleiben erhalten.
+ */
+fun seriesPreviews(
+    tasks: List<TaskWithDetails>,
+    from: LocalDate,
+    toExclusive: LocalDate,
+    zone: ZoneId = ZoneId.systemDefault(),
+): Map<LocalDate, List<TaskWithDetails>> =
+    tasks.filter { it.task.repeat != Repeat.NONE && it.task.dueAt != null && !it.task.isCompleted }
+        .flatMap { item ->
+            val t = item.task
+            val due = Instant.ofEpochMilli(t.dueAt!!).atZone(zone)
+            val until = t.repeatUntil?.let(LocalDate::ofEpochDay)
+            t.repeat.occurrences(t.repeat.next(due.toLocalDate()), from, toExclusive, until).map { day ->
+                day to item.copy(task = t.copy(dueAt = due.with(day).toInstant().toEpochMilli()))
+            }
+        }
+        .groupBy({ it.first }, { it.second })
+
 fun buildAgenda(
     today: LocalDate,
     days: Int,
     tasks: List<TaskWithDetails>,
     events: List<CalendarEvent>,
 ): List<AgendaSection> = buildList {
+    val previews = seriesPreviews(tasks, today, today.plusDays(days.toLong()))
     val overdue = tasks.filter { it.task.dueAt!!.toLocalDate().isBefore(today) }
     if (overdue.isNotEmpty()) add(AgendaSection("overdue", "Überfällig", overdue, warn = true))
     val shown = mutableSetOf<Pair<Long, Long>>()
@@ -64,7 +90,7 @@ fun buildAgenda(
         val day = today.plusDays(i.toLong())
         val dayTasks = tasks.filter { it.task.dueAt!!.toLocalDate() == day }
         val dayEvents = events.filter { it.occursOn(day) && shown.add(it.eventId to it.begin) }
-        add(AgendaSection(day.toString(), dayTitle(day, today), dayTasks, dayEvents))
+        add(AgendaSection(day.toString(), dayTitle(day, today), dayTasks, dayEvents, previews = previews[day].orEmpty()))
     }
 }
 

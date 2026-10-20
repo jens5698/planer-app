@@ -78,6 +78,10 @@ interface TaskDao {
     @Query("SELECT COUNT(*) FROM tasks WHERE listId = :listId AND completedAt IS NULL")
     suspend fun countOpenInList(listId: Long): Int
 
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE completedAt IS NULL AND repeat != 0 AND dueAt IS NOT NULL")
+    fun observeOpenRecurring(): Flow<List<TaskWithDetails>>
+
     @Query("SELECT * FROM tasks WHERE completedAt IS NULL AND remindAt > :now")
     suspend fun upcomingReminders(now: Long): List<Task>
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,18 +49,21 @@ fun TaskRow(
     onClick: () -> Unit,
     /** Ersetzt das Fälligkeitsdatum, z. B. durch "Erledigt 14:32". */
     dateText: String? = null,
+    /** false für Vorschau-Termine einer Serie: Checkbox aus, Zeile abgeschwächt. */
+    enabled: Boolean = true,
 ) {
     val task = item.task
     val scheme = MaterialTheme.colorScheme
     val dueDay = task.dueAt?.toLocalDate()
     val overdue = dueDay != null && !task.isCompleted && dueDay.isBefore(LocalDate.now())
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(start = 8.dp, end = 20.dp, top = 4.dp, bottom = 4.dp),
+        modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1f else 0.55f).clickable(onClick = onClick).padding(start = 8.dp, end = 20.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Checkbox(
             checked = task.isCompleted,
             onCheckedChange = { onToggle() },
+            enabled = enabled,
             colors = CheckboxDefaults.colors(
                 uncheckedColor = priorityColor(task.priority),
                 checkedColor = scheme.outline,
