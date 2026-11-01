@@ -16,6 +16,19 @@ class Converters {
     @TypeConverter fun intToRepeat(i: Int): Repeat = Repeat.entries[i]
 }
 
+/** v4: Notizen je Liste. SQL entspricht dem, was Room für [ListNote] erzeugt. */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `list_notes` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `listId` INTEGER NOT NULL, " +
+                "`title` TEXT NOT NULL, `body` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`listId`) REFERENCES `task_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_list_notes_listId` ON `list_notes` (`listId`)")
+    }
+}
+
 /** v3: Enddatum für Serien. */
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -32,8 +45,8 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 }
 
 @Database(
-    entities = [TaskList::class, Task::class, ChecklistItem::class, Tag::class, TaskTagCrossRef::class],
-    version = 3,
+    entities = [TaskList::class, Task::class, ChecklistItem::class, Tag::class, TaskTagCrossRef::class, ListNote::class],
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -42,11 +55,12 @@ abstract class PlanerDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun checklistDao(): ChecklistDao
     abstract fun tagDao(): TagDao
+    abstract fun listNoteDao(): ListNoteDao
 
     companion object {
         fun create(context: Context): PlanerDatabase =
             Room.databaseBuilder(context, PlanerDatabase::class.java, "planer.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
     }
 }

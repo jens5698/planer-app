@@ -27,6 +27,7 @@ import de.planer.app.ui.screens.CalendarScreen
 import de.planer.app.ui.screens.CompletedScreen
 import de.planer.app.ui.screens.ListScreen
 import de.planer.app.ui.screens.ListsScreen
+import de.planer.app.ui.screens.NoteEditScreen
 import de.planer.app.ui.screens.SearchScreen
 import de.planer.app.ui.screens.TaskDetailScreen
 import de.planer.app.ui.screens.AgendaScreen
@@ -90,7 +91,26 @@ fun PlanerNavHost(repository: TaskRepository, calendar: CalendarRepository) {
             composable("calendar") { CalendarScreen(repository, calendar, openTask) }
             composable("search") { SearchScreen(repository, openTask, onBack = { nav.popBackStack() }) }
             composable("list/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
-                ListScreen(repository, it.arguments!!.getLong("id"), openTask, onBack = { nav.popBackStack() })
+                val listId = it.arguments!!.getLong("id")
+                ListScreen(
+                    repository, listId, openTask,
+                    onOpenNote = { noteId -> nav.navigate("note/$listId/$noteId") },
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            composable(
+                "note/{listId}/{noteId}",
+                arguments = listOf(
+                    navArgument("listId") { type = NavType.LongType },
+                    navArgument("noteId") { type = NavType.LongType },
+                ),
+            ) {
+                NoteEditScreen(
+                    repository,
+                    listId = it.arguments!!.getLong("listId"),
+                    noteId = it.arguments!!.getLong("noteId"),
+                    onBack = { nav.popBackStack() },
+                )
             }
             composable("task/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
                 TaskDetailScreen(repository, it.arguments!!.getLong("id"), onBack = { nav.popBackStack() })

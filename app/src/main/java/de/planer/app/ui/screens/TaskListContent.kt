@@ -70,6 +70,8 @@ fun TaskListContent(
     empty: String,
     initiallyCollapsed: Set<String> = emptySet(),
     showAdd: Boolean = true,
+    /** Zusätzlicher Inhalt oberhalb der Karten, z. B. die Notizen einer Liste. */
+    header: (@Composable () -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(false) }
@@ -88,10 +90,11 @@ fun TaskListContent(
             ) { Icon(Icons.Filled.Add, contentDescription = "Aufgabe hinzufügen") }
         },
     ) { padding ->
-        if (visible.isEmpty()) {
-            Text(empty, Modifier.padding(padding).padding(24.dp), color = MaterialTheme.colorScheme.outline)
-        }
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+            if (header != null) item(key = "header") { header() }
+            if (visible.isEmpty()) {
+                item(key = "empty") { Text(empty, Modifier.padding(24.dp), color = MaterialTheme.colorScheme.outline) }
+            }
             items(visible, key = { it.key }) { section ->
                 val isCollapsed = section.key in collapsed
                 SectionCard(

@@ -24,7 +24,15 @@ import de.planer.app.data.TaskRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> Unit, onBack: () -> Unit) {
+fun ListScreen(
+    repository: TaskRepository,
+    listId: Long,
+    onOpenTask: (Long) -> Unit,
+    onOpenNote: (Long) -> Unit,
+    onBack: () -> Unit,
+) {
+    val notes by remember(listId) { repository.observeNotes(listId) }.collectAsState(initial = emptyList())
+    var notesCollapsed by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val tasks by remember(listId) { repository.observeList(listId) }.collectAsState(initial = emptyList())
     val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
     val list = lists.firstOrNull { it.id == listId }
@@ -63,6 +71,15 @@ fun ListScreen(repository: TaskRepository, listId: Long, onOpenTask: (Long) -> U
                 },
             )
         },
-        empty = "Diese Liste ist leer.",
+        empty = "Noch keine Aufgaben in dieser Liste.",
+        header = {
+            de.planer.app.ui.components.NotesCard(
+                notes = notes,
+                collapsed = notesCollapsed,
+                onToggle = { notesCollapsed = !notesCollapsed },
+                onOpen = { onOpenNote(it.id) },
+                onAdd = { onOpenNote(0L) },
+            )
+        },
     )
 }

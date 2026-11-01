@@ -15,6 +15,7 @@ class TaskRepository(
     private val tasks = db.taskDao()
     private val checklist = db.checklistDao()
     private val tags = db.tagDao()
+    private val notes = db.listNoteDao()
 
     fun observeLists(): Flow<List<TaskList>> = lists.observeAll()
     fun observeTags(): Flow<List<Tag>> = tags.observeAll()
@@ -47,6 +48,23 @@ class TaskRepository(
 
     fun observeCompletedSince(since: LocalDate, zone: ZoneId = ZoneId.systemDefault()) =
         tasks.observeCompletedSince(since.atStartOfDay(zone).toInstant().toEpochMilli())
+
+    fun observeNotes(listId: Long) = notes.observeByList(listId)
+
+    suspend fun getNote(id: Long) = notes.get(id)
+
+    /** Neue Notizen werden angelegt, leere nicht gespeichert bzw. gelöscht. Gibt die ID zurück (0 = keine). */
+    suspend fun saveNote(note: ListNote): Long {
+        val stamped = note.copy(updatedAt = System.currentTimeMillis())
+        return when {
+            note.id == 0L && note.isBlank -> 0
+            note.id == 0L -> notes.insert(stamped)
+            note.isBlank -> { notes.delete(note); 0 }
+            else -> { notes.update(stamped); note.id }
+        }
+    }
+
+    suspend fun deleteNote(note: ListNote) = notes.delete(note)
 
     fun observeOpenRecurring() = tasks.observeOpenRecurring()
 

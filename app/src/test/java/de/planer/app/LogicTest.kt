@@ -183,3 +183,10 @@ class SeriesTest {
         assertEquals(1, agenda.first { it.key == "2026-10-27" }.previews.size)
     }
 }
+
+class NoteTest {
+    @Test fun blankNoteIsBlankOnlyWhenTitleAndBodyEmpty() {
+        assertTrue(de.planer.app.data.ListNote(listId = 1, title = " ", body = "").isBlank)
+        assertFalse(de.planer.app.data.ListNote(listId = 1, title = "", body = "PIN Garage 4711").isBlank)
+    }
+}
