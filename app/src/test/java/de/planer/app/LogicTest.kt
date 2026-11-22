@@ -189,4 +189,41 @@ class NoteTest {
         assertTrue(de.planer.app.data.ListNote(listId = 1, title = " ", body = "").isBlank)
         assertFalse(de.planer.app.data.ListNote(listId = 1, title = "", body = "PIN Garage 4711").isBlank)
     }
+
+    @Test fun weeklyOnMondayAndThursday() {
+        val r = de.planer.app.data.RepeatRule(Repeat.WEEKLY, weekdays = de.planer.app.data.RepeatRule.bit(DayOfWeek.MONDAY) or de.planer.app.data.RepeatRule.bit(DayOfWeek.THURSDAY))
+        val mon = LocalDate.of(2026, 11, 23)
+        assertEquals(LocalDate.of(2026, 11, 26), r.next(mon))
+        assertEquals(LocalDate.of(2026, 11, 30), r.next(LocalDate.of(2026, 11, 26)))
+        assertEquals(mon, r.align(LocalDate.of(2026, 11, 22))) // Sonntag -> Montag
+        assertEquals("Wöchentlich: Mo, Do", r.description)
+        assertEquals(4, r.occurrences(mon, mon, mon.plusDays(14), null).size)
+    }
+
+    @Test fun monthlyOn31stClampsAndReturns() {
+        val r = de.planer.app.data.RepeatRule(Repeat.MONTHLY, monthDay = 31)
+        assertEquals(LocalDate.of(2027, 2, 28), r.next(LocalDate.of(2027, 1, 31)))
+        assertEquals(LocalDate.of(2027, 3, 31), r.next(LocalDate.of(2027, 2, 28)))
+        assertEquals(LocalDate.of(2026, 11, 30), r.align(LocalDate.of(2026, 11, 22)))
+        assertEquals("Monatlich am 31.", r.description)
+    }
+
+    @Test fun monthlyAlignJumpsToNextMonth() {
+        val r = de.planer.app.data.RepeatRule(Repeat.MONTHLY, monthDay = 15)
+        assertEquals(LocalDate.of(2026, 12, 15), r.align(LocalDate.of(2026, 11, 22)))
+    }
+
+    @Test fun yearlyOnFixedDate() {
+        val r = de.planer.app.data.RepeatRule(Repeat.YEARLY, monthDay = 24, month = 12)
+        assertEquals(LocalDate.of(2026, 12, 24), r.align(LocalDate.of(2026, 11, 22)))
+        assertEquals(LocalDate.of(2027, 12, 24), r.next(LocalDate.of(2026, 12, 24)))
+        assertEquals(LocalDate.of(2027, 12, 24), r.align(LocalDate.of(2026, 12, 25)))
+        assertEquals("Jährlich am 24. Dezember", r.description)
+    }
+
+    @Test fun yearlyLeapDayReturnsInLeapYears() {
+        val r = de.planer.app.data.RepeatRule(Repeat.YEARLY, monthDay = 29, month = 2)
+        assertEquals(LocalDate.of(2027, 2, 28), r.next(LocalDate.of(2026, 2, 28)))
+        assertEquals(LocalDate.of(2028, 2, 29), r.next(LocalDate.of(2027, 2, 28)))
+    }
 }

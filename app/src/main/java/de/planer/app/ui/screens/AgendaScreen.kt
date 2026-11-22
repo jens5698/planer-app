@@ -38,7 +38,7 @@ import de.planer.app.calendar.CalendarRepository
 import de.planer.app.data.Repeat
 import de.planer.app.data.TaskRepository
 import de.planer.app.data.next
-import de.planer.app.data.occurrences
+import de.planer.app.data.rule
 import java.time.ZoneId
 import de.planer.app.data.TaskWithDetails
 import de.planer.app.ui.components.dayTitle
@@ -70,7 +70,7 @@ fun seriesPreviews(
             val t = item.task
             val due = Instant.ofEpochMilli(t.dueAt!!).atZone(zone)
             val until = t.repeatUntil?.let(LocalDate::ofEpochDay)
-            t.repeat.occurrences(t.repeat.next(due.toLocalDate()), from, toExclusive, until).map { day ->
+            t.rule.occurrences(t.rule.next(due.toLocalDate()), from, toExclusive, until).map { day ->
                 day to item.copy(task = t.copy(dueAt = due.with(day).toInstant().toEpochMilli()))
             }
         }

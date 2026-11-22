@@ -141,6 +141,7 @@ fun TaskListContent(
                         Task(
                             listId = targetListId(), title = r.title, dueAt = r.dueAt, priority = r.priority,
                             repeat = r.repeat, repeatUntil = r.repeatUntil,
+                            repeatWeekdays = r.repeatWeekdays, repeatMonthDay = r.repeatMonthDay, repeatMonth = r.repeatMonth,
                         ),
                     )
                     r.tags.forEach { repository.addTag(id, it) }

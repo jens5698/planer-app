@@ -113,7 +113,7 @@ class TaskRepository(
         val due = task.dueAt
         if (!task.isCompleted && task.repeat != Repeat.NONE && due != null) {
             val current = Instant.ofEpochMilli(due).atZone(zone)
-            val nextDay = task.repeat.next(current.toLocalDate())
+            val nextDay = task.rule.next(current.toLocalDate())
             // Serie zu Ende: letzte Instanz ganz normal erledigen.
             if (task.repeatUntil != null && nextDay.toEpochDay() > task.repeatUntil) {
                 updateTask(task.copy(completedAt = System.currentTimeMillis()))
@@ -124,7 +124,7 @@ class TaskRepository(
             // Erledigte Instanz festhalten, damit sie in "Erledigt" und im Verlauf der Liste auftaucht.
             tasks.insert(
                 task.copy(
-                    id = 0, repeat = Repeat.NONE, repeatUntil = null, remindAt = null,
+                    id = 0, repeat = Repeat.NONE, repeatUntil = null, repeatWeekdays = 0, repeatMonthDay = null, repeatMonth = null, remindAt = null,
                     completedAt = System.currentTimeMillis(), createdAt = System.currentTimeMillis(),
                 ),
             )

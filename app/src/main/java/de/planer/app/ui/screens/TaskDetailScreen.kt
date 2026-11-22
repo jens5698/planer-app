@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.Priority
 import de.planer.app.data.Repeat
+import de.planer.app.data.rule
 import de.planer.app.data.label
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -147,13 +148,24 @@ fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Uni
             val zone = ZoneId.systemDefault()
             val today = java.time.LocalDate.now(zone)
             RepeatPicker(
-                repeat = task.repeat,
+                rule = task.rule,
                 until = task.repeatUntil?.let(java.time.LocalDate::ofEpochDay),
                 start = task.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } ?: today,
             ) { r, until ->
-                // Wiederholung braucht ein Startdatum; ohne Datum wird heute gesetzt.
-                val due = task.dueAt ?: if (r == Repeat.NONE) null else today.atStartOfDay(zone).toInstant().toEpochMilli()
-                scope.launch { repository.updateTask(task.copy(repeat = r, repeatUntil = until?.toEpochDay(), dueAt = due)) }
+                // Wiederholung braucht ein Startdatum, das zur Regel passt (Uhrzeit bleibt erhalten).
+                val due = if (r.repeat == Repeat.NONE) task.dueAt else {
+                    val current = task.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone) } ?: today.atStartOfDay(zone)
+                    current.with(r.align(current.toLocalDate())).toInstant().toEpochMilli()
+                }
+                val shift = if (task.dueAt != null && due != null) due - task.dueAt else 0L
+                scope.launch {
+                    repository.updateTask(
+                        task.copy(
+                            repeat = r.repeat, repeatWeekdays = r.weekdays, repeatMonthDay = r.monthDay, repeatMonth = r.month,
+                            repeatUntil = until?.toEpochDay(), dueAt = due, remindAt = task.remindAt?.plus(shift),
+                        ),
+                    )
+                }
             }
 
             OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text("Notizen") }, minLines = 3)

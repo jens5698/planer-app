@@ -16,6 +16,15 @@ class Converters {
     @TypeConverter fun intToRepeat(i: Int): Repeat = Repeat.entries[i]
 }
 
+/** v5: Wochentage, Monatstag und Monat für Serien. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN repeatWeekdays INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN repeatMonthDay INTEGER")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN repeatMonth INTEGER")
+    }
+}
+
 /** v4: Notizen je Liste. SQL entspricht dem, was Room für [ListNote] erzeugt. */
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -46,7 +55,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 
 @Database(
     entities = [TaskList::class, Task::class, ChecklistItem::class, Tag::class, TaskTagCrossRef::class, ListNote::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -60,7 +69,7 @@ abstract class PlanerDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): PlanerDatabase =
             Room.databaseBuilder(context, PlanerDatabase::class.java, "planer.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
     }
 }

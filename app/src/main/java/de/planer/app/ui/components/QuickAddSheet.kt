@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.planer.app.data.Priority
 import de.planer.app.data.Repeat
+import de.planer.app.data.RepeatRule
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import java.time.LocalDate
 import java.time.ZoneId
@@ -30,6 +33,9 @@ data class QuickAddResult(
     val tags: List<String>,
     val repeat: Repeat = Repeat.NONE,
     val repeatUntil: Long? = null,
+    val repeatWeekdays: Int = 0,
+    val repeatMonthDay: Int? = null,
+    val repeatMonth: Int? = null,
 )
 
 /**
@@ -57,14 +63,14 @@ fun QuickAddDialog(
 ) {
     var text by remember { mutableStateOf("") }
     var due by remember { mutableStateOf(defaultDue) }
-    var repeat by remember { mutableStateOf(Repeat.NONE) }
+    var rule by remember { mutableStateOf(RepeatRule(Repeat.NONE)) }
     var until by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Neue Aufgabe") },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -78,11 +84,11 @@ fun QuickAddDialog(
                     }, { Text("Morgen") })
                 }
                 Text("Wiederholen", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
-                RepeatPicker(repeat, until, start = due ?: today) { r, u ->
-                    repeat = r
+                RepeatPicker(rule, until, start = due ?: today) { r, u ->
+                    rule = r
                     until = u
-                    // Eine Serie braucht einen ersten Termin.
-                    if (r != Repeat.NONE && due == null) due = today
+                    // Eine Serie braucht einen ersten Termin, und der muss zur Regel passen.
+                    if (r.repeat != Repeat.NONE) due = r.align(due ?: today)
                 }
             }
         },
@@ -90,7 +96,16 @@ fun QuickAddDialog(
             TextButton(
                 enabled = text.isNotBlank(),
                 onClick = {
-                    onAdd(parseQuickAdd(text, due).copy(repeat = repeat, repeatUntil = until?.toEpochDay()))
+                    val start = if (rule.repeat == Repeat.NONE) due else rule.align(due ?: today)
+                    onAdd(
+                        parseQuickAdd(text, start).copy(
+                            repeat = rule.repeat,
+                            repeatUntil = until?.toEpochDay(),
+                            repeatWeekdays = rule.weekdays,
+                            repeatMonthDay = rule.monthDay,
+                            repeatMonth = rule.month,
+                        ),
+                    )
                 },
             ) { Text("Hinzufügen") }
         },

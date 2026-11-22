@@ -47,6 +47,12 @@ data class Task(
     val repeat: Repeat = Repeat.NONE,
     /** Letzter Tag der Serie als Epoch-Day; null = endlos. */
     val repeatUntil: Long? = null,
+    /** Wochentage für wöchentliche Serien, siehe [RepeatRule.weekdays]. */
+    val repeatWeekdays: Int = 0,
+    /** Tag im Monat für monatliche und jährliche Serien, siehe [RepeatRule.monthDay]. */
+    val repeatMonthDay: Int? = null,
+    /** Monat (1–12) für jährliche Serien, siehe [RepeatRule.month]. */
+    val repeatMonth: Int? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val sortOrder: Int = 0,
 ) {
