@@ -2,6 +2,13 @@ package de.planer.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.Color
+import de.planer.app.ui.ListIcon
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,6 +79,8 @@ fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Uni
     var newTag by remember { mutableStateOf("") }
     var pickDate by remember { mutableStateOf(false) }
     var pickReminder by remember { mutableStateOf(false) }
+    var pickList by remember { mutableStateOf(false) }
+    val lists by remember { repository.observeLists() }.collectAsState(initial = emptyList())
 
     // Titel/Notizen beim Verlassen speichern.
     val saveAndBack = {
@@ -105,6 +114,35 @@ fun TaskDetailScreen(repository: TaskRepository, taskId: Long, onBack: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(task.isCompleted, onCheckedChange = { scope.launch { repository.toggleCompleted(task) } })
                 OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.titleLarge)
+            }
+
+            // Liste (Gebiet) der Aufgabe, per Menü änderbar.
+            val current = lists.firstOrNull { it.id == task.listId }
+            Box {
+                AssistChip(
+                    onClick = { pickList = true },
+                    leadingIcon = {
+                        current?.let { Icon(ListIcon.of(it.icon).vector, contentDescription = null, tint = Color(it.color)) }
+                    },
+                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                    label = { Text(current?.name ?: "Liste wählen") },
+                )
+                DropdownMenu(expanded = pickList, onDismissRequest = { pickList = false }) {
+                    lists.forEach { l ->
+                        DropdownMenuItem(
+                            text = { Text(l.name) },
+                            leadingIcon = { Icon(ListIcon.of(l.icon).vector, contentDescription = null, tint = Color(l.color)) },
+                            trailingIcon = { if (l.id == task.listId) Icon(Icons.Filled.Check, contentDescription = "Aktuell") },
+                            onClick = {
+                                pickList = false
+                                if (l.id != task.listId) scope.launch {
+                                    // Ungespeicherte Eingaben im Titel/Notizen mitnehmen.
+                                    repository.updateTask(task.copy(listId = l.id, title = title.ifBlank { task.title }, notes = notes))
+                                }
+                            },
+                        )
+                    }
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
